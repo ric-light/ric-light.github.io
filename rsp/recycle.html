@@ -52,7 +52,7 @@
 
 <script>
     "use strict";
-    var dappContactAddress = "n1xKk4i9rxHHA9rNaYnFX33x11jUUogknmh";
+    var dappContactAddress = "n1qVshfeVJLPgfVfvgSt2r16LJw476DZ1x4";
     var nebulas = require("nebulas"), Account = Account, neb = new nebulas.Neb();
 //    neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"))
 //    neb.setRequest(new nebulas.HttpRequest("http://localhost:8685"))
@@ -84,8 +84,8 @@
         var callArgs = "[\"" + $("#gamecode-input").val() + "\"]";
         console.log(callArgs);
         var options = {    //使用nebpay的call接口去调用合约,
-            //callback: NebPay.config.mainnetUrl //在主网查询(默认值)
-            callback: NebPay.config.testnetUrl //在测试网查询
+          callback: NebPay.config.mainnetUrl //在主网查询(默认值)
+            //callback: NebPay.config.testnetUrl //在测试网查询
         }
         serialNumber = nebPay.call(to, value, callFunction, callArgs, options);
         $("#modal-text").html("该和星云链交互进行中...")
