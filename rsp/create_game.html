@@ -1,0 +1,130 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/nebulas.js"></script>
+<script src="js/nebpay.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css"></link>
+<style>
+        .btn-group> .btn.active {
+            border-color:deepskyblue;
+            border-width: medium;
+        }
+        </style>
+</head>
+<body>
+        <div class="page-header" style="padding-top:20px;margin-top:0px;text-align: center;background-color:#337ab7">
+                <h1 style="margin-top:0px;color:white">NAS猜拳
+                </h1>
+            </div>
+
+<div class="container">
+        <p>创建新游戏：</p>
+<br>
+<div class="row">
+
+        <div class="col-md-12 col-sm-12" style="text-align: center">
+                <div class="btn-group" data-toggle="buttons">
+                    <label style="margin:20px;background:url(img/scissors.png);background-size:100px 100px;height:100px;width:100px"  class="btn btn-info btn-danger">
+                        <input  type="radio" name="options" value="S">
+                    </label>
+                    <label style="margin:20px;background:url(img/rock.png);background-size:100px 100px;height:100px;width:100px" class="btn btn-info btn-danger">
+                        <input   type="radio" name="options" value="R">
+                    </label>
+                    <label style="margin:20px;background:url(img/paper.png);background-size:100px 100px;height:100px;width:100px" class="btn btn-info btn-danger">
+                        <input   type="radio" name="options" value="P">
+                    </label>
+                  </div>
+                </div>
+
+</div>
+<br>
+
+<div class="row" style="text-align: center">
+        <button type="button" class="btn btn-primary btn-lg" id="create-btn" style="font-size:20px;padding:20px">创建</button>
+   
+      </div>
+
+            
+      <!-- Modal -->
+      <div aria-hidden="true" data-backdrop="static" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="myModalLabel">创建游戏</h4>
+                </div>
+                <div class="modal-body" id="modal-text">
+                  和星云链交互进行中...
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+</div>
+
+<script>
+        "use strict";
+        var dappContactAddress = "n1xKk4i9rxHHA9rNaYnFX33x11jUUogknmh";
+        var nebulas = require("nebulas"), Account = Account, neb = new nebulas.Neb();
+    //    neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"))
+ //       neb.setRequest(new nebulas.HttpRequest("http://localhost:8685"))
+    
+        var NebPay = require("nebpay");     //https://github.com/nebulasio/nebPay
+        var nebPay = new NebPay();
+        var serialNumber;
+        
+        $("#create-btn").click(function () {
+            var to = dappContactAddress;
+            var value = "0";
+            var callFunction = "create_new_game";
+    //        alert(JSON.stringify($('input[name="options"]:checked')["length"]));
+     //       return;
+            if ($('input[name="options"]:checked')["length"] == 0) {
+              alert("请选择一个竞猜答案！");
+              return;
+            }
+            $("#myModal").modal('show');
+            var callArgs = "[\""+ $('input[name="options"]:checked').val() + "\"]";
+            console.log(callArgs);
+            var options = {    //使用nebpay的call接口去调用合约,
+                //callback: NebPay.config.mainnetUrl //在主网查询(默认值)
+                callback: NebPay.config.testnetUrl //在测试网查询
+            }
+            serialNumber = nebPay.call(to, value, callFunction, callArgs, options);
+            $("#modal-text").html("该和星云链交互进行中...")
+            var intervalQuery = setInterval(        function (resp) {
+              nebPay.queryPayInfo(serialNumber, options)   //search transaction result from server (result upload to server by app)
+                .then(function (resp) {
+                    console.log("tx result: " + resp)   //resp is a JSON string
+                    var respObject = JSON.parse(resp)
+                    console.log(respObject)
+                    //code==0交易发送成功, status==1交易已被打包上链
+                    if(respObject.code === 0 && respObject.data.status === 1){       
+                        var execute_result = JSON.parse(respObject["data"]["execute_result"])             
+                        //交易成功,处理后续任务....
+                        if (execute_result["code"] == 0) {
+                          $("#modal-text").html("游戏创建成功！请分享该链接给挑战者： " + "<a href=\"/rsp/guess.html?gamecode="+ execute_result["game_name"] +"\" >"+ location.protocol + "//" + location.host + "/rsp/guess.html?gamecode="+ execute_result["game_name"] +"</a>")
+                        } else {
+                          $("#modal-text").html("游戏创建失败！")
+                        }
+                        $("#myModal").modal('show');
+                        clearInterval(intervalQuery)    //清除定时查询
+                    }
+                })
+                .catch(function (err) {
+                    $("#modal-text").html("该和星云链交互失败")
+                    console.log(err);
+                });
+    
+                }
+            , 10000); //建议查询频率10-15s,因为星云链出块时间为15s,并且查询服务器限制每分钟最多查询10次。
+    
+        })
+    
+    </script>
+</body>
+</html>
